@@ -7,24 +7,31 @@ from sqlalchemy.orm import sessionmaker
 from api import create_app
 from models import Base, Station, WeatherRaw, WeatherStats
 
-
+#Pytest fixture to create and configure a test instance
 @pytest.fixture()
 def app():
+    # Create a Flask app with an memory SQLite database
     app = create_app("sqlite:///:memory:")
     engine = app.config["ENGINE"]
     SessionLocal = sessionmaker(bind=engine)
     with app.app_context():
+        # Create all tables
         Base.metadata.create_all(engine)
+        # Starting a new session for inserting test data
         session = SessionLocal()
+        # Add a test station
         station = Station(id="ST001")
         session.add(station)
+        # Add raw weather data for two days
         session.add_all([
             WeatherRaw(station_id="ST001", date=date(2020, 1, 1), tmax=20, tmin=5, precipitation=10),
             WeatherRaw(station_id="ST001", date=date(2020, 1, 2), tmax=25, tmin=10, precipitation=0),
         ])
         session.add(WeatherStats(station_id="ST001", year=2020, avg_tmax=2.0, avg_tmin=1.0, total_precip=0.1))
+        # Commit the test data
         session.commit()
         yield app
+        # Close the session 
         session.close()
 
 
