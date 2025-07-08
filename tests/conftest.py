@@ -7,7 +7,7 @@ from sqlalchemy.orm import sessionmaker
 from api import create_app
 from models import Base, Station, WeatherRaw, WeatherStats
 
-
+# Pytest fixtures to set up an memory test app and client with seeded data
 @pytest.fixture()
 def app():
     app = create_app("sqlite:///:memory:")
