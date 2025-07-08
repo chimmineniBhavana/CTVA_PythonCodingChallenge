@@ -12,7 +12,7 @@ import compute_weather_stats
 
 
 def create_app(db_url: str | None = None) -> Flask:
-    """Application factory."""
+    """Application factory to create and configure the Flask app"""
     app = Flask(__name__)
     app.config.setdefault(
         "DATABASE_URL",
