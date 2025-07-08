@@ -1,0 +1,18 @@
+version: '3.9'
+services:
+  db:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: pass
+      POSTGRES_DB: weather
+    ports:
+      - "5432:5432"
+  api:
+    build: .
+    environment:
+      DATABASE_URL: postgresql://avnadmin:AVNS_WDdFU6_4K9qT5Nk0-iK@support-harshp-c41f.f.aivencloud.com:13002/weather?sslmode=require
+    ports:
+      - "5000:5000"
+    depends_on:
+      - db
