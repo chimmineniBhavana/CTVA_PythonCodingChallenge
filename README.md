@@ -1,3 +1,5 @@
+<!-- Setup, usage, and testing guide for the Weather API serving raw and aggregated weather data -->
+
 # Weather API
 
 This project exposes raw and aggregated weather data via a simple REST API built with Flask and Flask-RESTX.
