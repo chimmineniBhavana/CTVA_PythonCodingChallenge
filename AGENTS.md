@@ -62,7 +62,7 @@ Compute yearly stats per station and store them in `weather_stats`.
 
 ---
 
-## 4. API Agent
+## 4. API Agents
 
 **Purpose:**  
 Expose raw and aggregated data via JSON REST endpoints.
