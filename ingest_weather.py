@@ -12,18 +12,20 @@ from sqlalchemy.exc import SQLAlchemyError
 
 from models import Base, Station, WeatherRaw, IngestedFile
 
-
+# Parsed a single line of weather data and it returns a tuple with date and weather values
 def parse_line(line: str) -> Tuple[str, int | None, int | None, int | None]:
     parts = line.strip().split('\t')
     if len(parts) != 4:
         raise ValueError(f"Invalid line: {line!r}")
     date_str, tmax, tmin, prcp = parts
+
+    # Convert weather values to int, replacing -9999 with None to handle missing data
     def val(x: str) -> int | None:
         v = int(x)
         return None if v == -9999 else v
     return date_str, val(tmax), val(tmin), val(prcp)
 
-
+# Generator function that reads weather records and yield dicts
 def iter_records(file_path: Path) -> Iterator[dict]:
     station_id = file_path.stem
     with file_path.open('r') as f:
@@ -37,7 +39,7 @@ def iter_records(file_path: Path) -> Iterator[dict]:
                 'precipitation': prcp,
             }
 
-
+# CLI entry point using Click
 @click.command()
 @click.option(
     '--db-url',
@@ -64,12 +66,13 @@ def main(db_url: str, data_dir: str, dry_run: bool, verbose: bool) -> None:
     insert_fn = pg_insert if dialect == "postgresql" else sqlite_insert
 
     total = 0
+    # Start database session
     with Session(engine) as session:
         ingested = {
             name
             for name in session.execute(select(IngestedFile.file_name)).scalars()
         }
-
+        # Process each .txt file in the data directory
         for path in sorted(Path(data_dir).glob("*.txt")):
             if path.name in ingested:
                 logging.info("Skipping %s (already ingested)", path.name)
@@ -82,8 +85,8 @@ def main(db_url: str, data_dir: str, dry_run: bool, verbose: bool) -> None:
                 .on_conflict_do_nothing(index_elements=["id"])
             )
             session.execute(stmt_station)
-
             records = list(iter_records(path))
+            # Bulk insert weather records and ignore duplicates
             if records:
                 stmt = (
                     insert_fn(WeatherRaw)
@@ -91,14 +94,16 @@ def main(db_url: str, data_dir: str, dry_run: bool, verbose: bool) -> None:
                 )
                 session.execute(stmt, records)
                 total += len(records)
-
+                
+            # Record that this file has been ingested
             stmt_file = insert_fn(IngestedFile).values(file_name=path.name)
             if dialect == "postgresql":
                 stmt_file = stmt_file.on_conflict_do_nothing(index_elements=["file_name"])
             else:
                 stmt_file = stmt_file.prefix_with("OR IGNORE")
             session.execute(stmt_file)
-
+            
+            # Commit or rollback based on dry run flag
             if dry_run:
                 session.rollback()
                 logging.info("Dry-run mode: rolled back transaction for %s", path.name)
@@ -108,7 +113,7 @@ def main(db_url: str, data_dir: str, dry_run: bool, verbose: bool) -> None:
                 except SQLAlchemyError:
                     session.rollback()
                     logging.exception("Error committing transaction for %s", path.name)
-                    raise
+                    raise # Reraise to stop execution
 
     end = datetime.now()
     logging.info('Ingestion complete: %d records processed in %s', total, end - start)
