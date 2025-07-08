@@ -1,6 +1,6 @@
 from datetime import date
 
-
+# Tests for Weather API endpoints
 def test_weather_list(client):
     resp = client.get('/api/weather')
     assert resp.status_code == 200
