@@ -1,3 +1,4 @@
+#Dockerfile to run the Weather API
 FROM python:3.12-slim
 WORKDIR /app
 COPY requirements.txt .
