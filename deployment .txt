@@ -1,0 +1,15 @@
+Assume you are asked to get your code running in the cloud using AWS. 
+What tools and AWS services would you use to deploy the API, database, and a scheduled version of your data ingestion code? 
+Write up a description of your approach.
+
+As I am currently working at Uber, Where I focus mainly on scability and real time performance. 
+I would containerize the backend API with Docker and deploy each service using ECS with fargate for scability. 
+I used to use EC2 before in place of fargate but with the help of fargate we donot have to manage the servers and then the images are stored in ECR 
+and an incoming traffic would be routed through an application load balancer.
+
+I would use RDS for transactional data for trips and payments and redies for real time data. All services would be deployed in a VPC for security.
+For scheduled data like weather or traffic , I would use AWS Lambda with EventBridge and rawdata would go to S3 and I would use pyspark or Glue for processing.
+
+Since Uber runs globally, I would also implement cloudwatch dashboards and alarms to monitor errors and scaling metrics in real time.
+
+
