@@ -7,7 +7,7 @@ import click
 
 from models import Base, WeatherRaw, WeatherStats
 
-
+# CLI command to compute yearly weather statistics
 @click.command()
 @click.option(
     '--db-url',
@@ -26,6 +26,7 @@ def main(db_url: str, verbose: bool) -> None:
     insert_fn = pg_insert if dialect == 'postgresql' else sqlite_insert
 
     with Session(engine) as session:
+        # Subquery to compute average and total stats per station per year
         subq = (
             session.query(
                 WeatherRaw.station_id.label('station_id'),
@@ -37,10 +38,11 @@ def main(db_url: str, verbose: bool) -> None:
             .group_by(WeatherRaw.station_id, func.extract('year', WeatherRaw.date))
             .subquery()
         )
-
+        # Prepare insert statement from the subquery
         stmt = insert_fn(WeatherStats).from_select(
             ('station_id', 'year', 'avg_tmax', 'avg_tmin', 'total_precip'), subq
         )
+        # update existing records if they already exist
         if dialect == 'postgresql':
             stmt = stmt.on_conflict_do_update(
                 index_elements=['station_id', 'year'],
@@ -51,10 +53,13 @@ def main(db_url: str, verbose: bool) -> None:
                 },
             )
         else:
+            # SQLite syntax to replace existing row
             stmt = stmt.prefix_with('OR REPLACE')
-
+        # Execute the insert/update statement
         result = session.execute(stmt)
         session.commit()
+        
+        # Log the number of records processed
         logging.info(
             'Computed statistics for %d station-year combinations', result.rowcount
         )
